@@ -1,0 +1,111 @@
+#!/bin/bash
+#
+# kazoo
+#
+# description: Dubbed a "scalable, distributed, cloud-based" telephony platform
+# processname: kazoo
+#
+
+# Source function library.
+. /lib/lsb/init-functions
+
+KZ_DIR="/opt/kazoo"
+KZ_APP="kazoo"
+KZ_APPLICATION="whistle_apps"
+KZ_ECALLMGR="ecallmgr"
+LOCKFILE=${LOCKFILE-/var/lock/${KZ_APP}}
+USER="kazoo"
+GROUP="kazoo"
+RETVAL=0
+START_APP="/opt/kazoo/scripts/start-apps.sh"
+START_ECALLMGR="/opt/kazoo/scripts/start-ecallmgr.sh"
+# Check that networking is up.
+if [ "$NETWORKING" = "no" ]; then
+    exit 0
+fi
+
+ensure_cookie () {
+   if [ ! -f /opt/kazoo/.erlang.cookie ] ; then
+        date +%s | sha256sum | base64 | head -c 32 > /opt/kazoo/.erlang.cookie
+   fi
+   chmod 400 /opt/kazoo/.erlang.cookie
+   chown ${USER}:daemon /opt/kazoo/.erlang.cookie
+}
+
+start() {
+    cd ${KZ_DIR}
+    export HOME=${KZ_DIR}
+    export ERL_CRASH_DUMP=$(date +%s)_${KZ_APP}_erl_crash.dump
+    export ERL_LIBS=${KZ_DIR}/deps:${KZ_DIR}/core
+    ensure_cookie
+    start-stop-daemon --start --chuid "$USER:$GROUP" --exec $START_APP > /dev/null &
+    start-stop-daemon --start --chuid "$USER:$GROUP" --exec $START_ECALLMGR > /dev/null &
+    RETVAL=$?
+    [ $RETVAL -eq 0 ] && touch ${LOCKFILE}
+    return $RETVAL
+}
+
+stop() {
+    pkill -P 1 -f ${KZ_APPLICATION} >/dev/null
+    RETVAL=$?
+    [ $RETVAL -eq 0 ] && rm ${LOCKFILE}
+}
+
+restart() {
+    #echo "Restarting ${KZ_APP}"
+    stop
+    start
+}
+
+status() {
+    export HOME=${KZ_DIR}
+    ${KZ_DIR}/utils/sup/sup -n ${KZ_APPLICATION} whistle_maintenance nodes
+    RETVAL=$?
+}
+
+case "$1" in
+    start)
+       [ "$VERBOSE" != no ] && log_daemon_msg "Starting ${KZ_APP}"
+       start
+       sleep 2
+       case "$?" in
+         0|1) [ "$VERBOSE" != no ] && log_end_msg 0 ;;
+         2) [ "$VERBOSE" != no ] && log_end_msg 1 ;;
+       esac
+    ;;
+    stop)
+       [ "$VERBOSE" != no ] && log_daemon_msg "Stopping ${KZ_APP}"
+       stop
+       sleep 2
+       case "$?" in
+         0|1) [ "$VERBOSE" != no ] && log_end_msg 0 ;;
+         2) [ "$VERBOSE" != no ] && log_end_msg 1 ;;
+       esac
+    ;;
+    status)
+	status
+        ;;
+    restart|reload)
+       log_daemon_msg "Restarting ${KZ_APP}"
+       stop
+       case "$?" in
+         0|1)
+           start
+           sleep 2
+         case "$?" in
+           0) log_end_msg 0 ;;
+           1|*) log_end_msg 1 ;;
+         esac
+         ;;
+         *) log_end_msg 1 ;;
+       esac
+    ;;
+    condrestart)
+        [ ! -e ${LOCKFILE} ] && restart
+        ;;
+    *)
+        echo $"Usage: $0 (start|stop|restart|status)"
+        exit 1
+esac
+
+exit $RETVAL
