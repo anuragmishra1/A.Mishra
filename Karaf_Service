@@ -1,0 +1,19 @@
+
+
+MAKE STARTUP SCRIPT FOR KARAF IN UBUNTU:
+
+Go into karaf prompt and write these commands:-
+
+  1. feature:install wrapper
+
+  2. wrapper:install -s AUTO_START -n KARAF -d Karaf -D "Karaf Service"
+
+Go to terminal prompt and run these commands:-
+
+  1. To install the service: ln -s /opt/apache-karaf-3.0.0.RC1/bin/KARAF-service /etc/init.d/
+  2. To start the service when the machine is rebooted: update-rc.d KARAF-service defaults
+  3. To disable starting the service when the machine is rebooted: update-rc.d -f KARAF-service remove
+  4. To start the service: /etc/init.d/KARAF-service start
+  5. To stop the service: /etc/init.d/KARAF-service stop
+  6. To uninstall the service : rm /etc/init.d/KARAF-service
+
