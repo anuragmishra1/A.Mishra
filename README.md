@@ -6,14 +6,24 @@ For Kazoo
 =========
 
 
-In this, kazoo start when system start with the user kazoo with daemon. So, when anyone will use this script add user name kazoo in their system(Ubuntu). 
+With the  using this script kazoo will automatically start when your system starts, but this script only for Ubuntu OS. To use this script you need to create a user 'kazoo'.
+ 
+The commands are below to add user in Ubuntu:
+  adduser --system kazoo
+  addgroup --system kazoo
 
-The process of adding user run these commands: 
-  "adduser --system kazoo"
-  "addgroup --system kazoo"
+After adding the user 'kazoo', please edit file /etc/passwd in the last of this file you will see kazoo user like as below:
+  kazoo:x:1001:1001:kazoo:/home/kazoo:/bin/bash
 
-After that edit in "vi /etc/passwd" at the last where you will see kazoo change the groupId write appropriate groupId which is given by system when you create the group and change /home/kazoo to /opt/kazoo and save.
+Change /home/kazoo to /opt/kazoo in above line. After that copy the kazoo script and paste it in the /etc/init.d/ folder and make sure copied script has a execute permission.
 
-Then copy this script file as name "kazoo" and paste in folder /etc/init.d/.
+To give the execute permission you need to run below command in /etc/init.d/ folder
+  chmod +x kazoo
 
-Then run "sudo apt-get install sysv-rc-conf" after that run "sysv-rc-conf kazoo on".Then it will be run with the daemon process.
+Install 'sysv-rc-conf' by using below command:
+sudo apt-get install sysv-rc-conf
+
+If you have already installed 'sysv-rc-conf' in your system then run the below command:
+sysv-rc-conf kazoo on
+
+Restart your system and you will see kazoo will start automatically when the system starts.
